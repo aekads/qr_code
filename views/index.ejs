@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Tracker</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 40px; }
+        table { width: 80%; margin: auto; border-collapse: collapse; }
+        th, td { padding: 10px; border: 1px solid black; }
+        img { width: 100px; height: 100px; }
+    </style>
+</head>
+<body>
+    <h1>QR Code Tracker</h1>
+
+    <form action="/generate-qr" method="POST">
+        <input type="text" name="link" placeholder="Enter URL" required>
+        <button type="submit">Generate QR Code</button>
+    </form>
+
+    <h2>Generated QR Codes</h2>
+    <table>
+        <tr>
+            <th>QR Code</th>
+            <th>Original Link</th>
+            <th>Scan Count</th>
+            <th>Scan</th>
+        </tr>
+        <% qrCodes.forEach(qr => { %>
+        <tr>
+            <td><img src="<%= qr.qr_image_url %>" alt="QR Code"></td>
+            <td><a href="<%= qr.link %>" target="_blank"><%= qr.link %></a></td>
+            <td><%= qr.scan_count %></td>
+            <td><a href="/scan/<%= qr.id %>">Scan</a></td>
+        </tr>
+        <% }); %>
+    </table>
+</body>
+</html>
