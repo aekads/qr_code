@@ -71,11 +71,10 @@ app.post("/generate-qr", async (req, res) => {
     }
 });
 app.get("/scan/:id", async (req, res) => {
-    const { id } = req.params;
-    console.log(`📌 Scan request received for ID: ${id}`);
-
     try {
-        // Fetch QR Code Details
+        console.log(`📌 Scan request received for ID: ${req.params.id}`);
+
+        const { id } = req.params;
         const result = await pool.query("SELECT * FROM qr_codes WHERE id = $1", [id]);
 
         if (result.rows.length === 0) {
@@ -85,26 +84,21 @@ app.get("/scan/:id", async (req, res) => {
 
         const qrCode = result.rows[0];
 
-        // Increment Scan Count
-        const updateResult = await pool.query(
-            "UPDATE qr_codes SET scan_count = scan_count + 1 WHERE id = $1 RETURNING scan_count",
-            [id]
-        );
+        // Update scan count
+        await pool.query("UPDATE qr_codes SET scan_count = scan_count + 1 WHERE id = $1", [id]);
+        console.log(`✅ Scan count updated for ID: ${id}`);
 
-        if (updateResult.rowCount === 0) {
-            console.log("❌ Failed to update scan count.");
-            return res.status(500).send("Failed to update scan count.");
-        }
+        res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
 
-        console.log(`✅ Scan count updated to: ${updateResult.rows[0].scan_count}`);
-
-        // Redirect to the original link
         res.redirect(qrCode.link);
-    } catch (err) {
-        console.error("❌ Error processing QR scan:", err);
-        res.status(500).send("Error processing QR scan.");
+    } catch (error) {
+        console.error("❌ Error processing scan:", error);
+        res.status(500).send("Server error.");
     }
 });
+
 
 
 // Start Server
