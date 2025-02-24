@@ -46,7 +46,6 @@ app.post("/generate-qr", async (req, res) => {
     if (!link) return res.send("Please provide a valid link.");
 
     try {
-        // Store in PostgreSQL and get the inserted ID
         const result = await pool.query(
             "INSERT INTO qr_codes (link, qr_image_url, scan_count) VALUES ($1, '', 0) RETURNING id",
             [link]
@@ -54,7 +53,9 @@ app.post("/generate-qr", async (req, res) => {
         const qrId = result.rows[0].id;
 
         // Generate QR Code with /scan/:id link
-        const qrScanUrl = `http://https://qr-code-8una.onrender.com//scan/${qrId}`; // Replace with your actual domain
+        const qrScanUrl = `http://https://qr-code-8una.onrender.com/scan/${qrId}`;
+        console.log(`✅ QR Code will point to: ${qrScanUrl}`);
+
         const qrCodeImage = qr.imageSync(qrScanUrl, { type: "png" });
         const qrFilePath = `uploads/${Date.now()}.png`;
         fs.writeFileSync(qrFilePath, qrCodeImage);
@@ -81,15 +82,23 @@ app.post("/generate-qr", async (req, res) => {
 
 
 
+
 app.get("/scan/:id", async (req, res) => {
     try {
         console.log(`📌 Scan request received for ID: ${req.params.id}`);
 
         const { id } = req.params;
+        
+        // Debugging: Check if ID is actually a number
+        if (isNaN(id)) {
+            console.log("❌ Invalid ID format.");
+            return res.status(400).send("Invalid QR Code ID.");
+        }
+
         const result = await pool.query("SELECT * FROM qr_codes WHERE id = $1", [id]);
 
         if (result.rows.length === 0) {
-            console.log("❌ QR Code not found.");
+            console.log("❌ QR Code not found in database.");
             return res.status(404).send("QR Code not found.");
         }
 
@@ -99,16 +108,13 @@ app.get("/scan/:id", async (req, res) => {
         await pool.query("UPDATE qr_codes SET scan_count = scan_count + 1 WHERE id = $1", [id]);
         console.log(`✅ Scan count updated for ID: ${id}`);
 
-        res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-        res.setHeader("Pragma", "no-cache");
-        res.setHeader("Expires", "0");
-
         res.redirect(qrCode.link);
     } catch (error) {
         console.error("❌ Error processing scan:", error);
         res.status(500).send("Server error.");
     }
 });
+
 
 
 
