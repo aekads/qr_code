@@ -46,8 +46,16 @@ app.post("/generate-qr", async (req, res) => {
     if (!link) return res.send("Please provide a valid link.");
 
     try {
-        // Generate QR Code
-        const qrCodeImage = qr.imageSync(link, { type: "png" });
+        // Store in PostgreSQL and get the inserted ID
+        const result = await pool.query(
+            "INSERT INTO qr_codes (link, qr_image_url, scan_count) VALUES ($1, '', 0) RETURNING id",
+            [link]
+        );
+        const qrId = result.rows[0].id;
+
+        // Generate QR Code with /scan/:id link
+        const qrScanUrl = `http://https://qr-code-8una.onrender.com//scan/${qrId}`; // Replace with your actual domain
+        const qrCodeImage = qr.imageSync(qrScanUrl, { type: "png" });
         const qrFilePath = `uploads/${Date.now()}.png`;
         fs.writeFileSync(qrFilePath, qrCodeImage);
 
@@ -55,11 +63,8 @@ app.post("/generate-qr", async (req, res) => {
         const cloudinaryResponse = await cloudinary.uploader.upload(qrFilePath);
         const qrImageUrl = cloudinaryResponse.secure_url;
 
-        // Store in PostgreSQL
-        await pool.query(
-            "INSERT INTO qr_codes (link, qr_image_url, scan_count) VALUES ($1, $2, 0)",
-            [link, qrImageUrl]
-        );
+        // Update QR Image URL in the database
+        await pool.query("UPDATE qr_codes SET qr_image_url = $1 WHERE id = $2", [qrImageUrl, qrId]);
 
         // Cleanup local file
         fs.unlinkSync(qrFilePath);
@@ -70,6 +75,12 @@ app.post("/generate-qr", async (req, res) => {
         res.send("Error generating QR code.");
     }
 });
+
+
+
+
+
+
 app.get("/scan/:id", async (req, res) => {
     try {
         console.log(`📌 Scan request received for ID: ${req.params.id}`);
