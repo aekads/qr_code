@@ -132,20 +132,21 @@ app.get("/scan/:id", async (req, res) => {
         // Update scan count
         await pool.query("UPDATE qr_codes SET scan_count = scan_count + 1 WHERE id = $1", [id]);
 
-        // Send a simple HTML page with a JS redirect (works better in Safari)
         res.send(`
             <html>
             <head>
-                <meta http-equiv="refresh" content="0;url=${qrCode.link}" />
                 <script>
-                    window.location.href = "${qrCode.link}";
+                    setTimeout(() => { 
+                        window.open("${qrCode.link}", "_blank"); 
+                    }, 500);
                 </script>
             </head>
             <body>
-                <p>If you are not redirected, <a href="${qrCode.link}">click here</a>.</p>
+                <p>Redirecting... If nothing happens, <a href="${qrCode.link}" target="_blank">click here</a>.</p>
             </body>
             </html>
         `);
+        
     } catch (error) {
         console.error("❌ Error processing scan:", error);
         res.status(500).send("Server error.");
