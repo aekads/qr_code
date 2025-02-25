@@ -83,22 +83,47 @@ app.post("/generate-qr", async (req, res) => {
 
 
 
+// app.get("/scan/:id", async (req, res) => {
+//     try {
+//         console.log(`📌 Scan request received for ID: ${req.params.id}`);
+
+//         const { id } = req.params;
+        
+//         // Debugging: Check if ID is actually a number
+//         if (isNaN(id)) {
+//             console.log("❌ Invalid ID format.");
+//             return res.status(400).send("Invalid QR Code ID.");
+//         }
+
+//         const result = await pool.query("SELECT * FROM qr_codes WHERE id = $1", [id]);
+
+//         if (result.rows.length === 0) {
+//             console.log("❌ QR Code not found in database.");
+//             return res.status(404).send("QR Code not found.");
+//         }
+
+//         const qrCode = result.rows[0];
+
+//         // Update scan count
+//         await pool.query("UPDATE qr_codes SET scan_count = scan_count + 1 WHERE id = $1", [id]);
+//         console.log(`✅ Scan count updated for ID: ${id}`);
+
+//         res.redirect(qrCode.link);
+//     } catch (error) {
+//         console.error("❌ Error processing scan:", error);
+//         res.status(500).send("Server error.");
+//     }
+// });
+
+
+
+
 app.get("/scan/:id", async (req, res) => {
     try {
-        console.log(`📌 Scan request received for ID: ${req.params.id}`);
-
         const { id } = req.params;
-        
-        // Debugging: Check if ID is actually a number
-        if (isNaN(id)) {
-            console.log("❌ Invalid ID format.");
-            return res.status(400).send("Invalid QR Code ID.");
-        }
-
         const result = await pool.query("SELECT * FROM qr_codes WHERE id = $1", [id]);
 
         if (result.rows.length === 0) {
-            console.log("❌ QR Code not found in database.");
             return res.status(404).send("QR Code not found.");
         }
 
@@ -106,9 +131,21 @@ app.get("/scan/:id", async (req, res) => {
 
         // Update scan count
         await pool.query("UPDATE qr_codes SET scan_count = scan_count + 1 WHERE id = $1", [id]);
-        console.log(`✅ Scan count updated for ID: ${id}`);
 
-        res.redirect(qrCode.link);
+        // Send a simple HTML page with a JS redirect (works better in Safari)
+        res.send(`
+            <html>
+            <head>
+                <meta http-equiv="refresh" content="0;url=${qrCode.link}" />
+                <script>
+                    window.location.href = "${qrCode.link}";
+                </script>
+            </head>
+            <body>
+                <p>If you are not redirected, <a href="${qrCode.link}">click here</a>.</p>
+            </body>
+            </html>
+        `);
     } catch (error) {
         console.error("❌ Error processing scan:", error);
         res.status(500).send("Server error.");
