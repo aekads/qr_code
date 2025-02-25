@@ -136,17 +136,32 @@ app.get("/scan/:id", async (req, res) => {
             <html>
             <head>
                 <script>
-                    setTimeout(() => { 
-                        window.open("${qrCode.link}", "_blank"); 
-                    }, 500);
+                    function openInChrome() {
+                        var url = "${qrCode.link}";
+        
+                        // Check if Chrome is available (iOS scheme)
+                        var chromeURL = url.replace(/^https?:\/\//, "googlechrome://");
+        
+                        // Open in Chrome
+                        window.location.href = chromeURL;
+        
+                        // Fallback: If Chrome is not installed, open in the default browser after 1 second
+                        setTimeout(() => {
+                            window.location.href = url;
+                        }, 1000);
+                    }
+        
+                    // Auto-execute on page load
+                    openInChrome();
                 </script>
             </head>
             <body>
-                <p>Redirecting... If nothing happens, <a href="${qrCode.link}" target="_blank">click here</a>.</p>
+                <p>Redirecting to Chrome... If nothing happens, <a href="googlechrome://${qrCode.link.replace(/^https?:\/\//, '')}">click here</a>.</p>
             </body>
             </html>
         `);
         
+
     } catch (error) {
         console.error("❌ Error processing scan:", error);
         res.status(500).send("Server error.");
