@@ -83,47 +83,22 @@ app.post("/generate-qr", async (req, res) => {
 
 
 
-// app.get("/scan/:id", async (req, res) => {
-//     try {
-//         console.log(`📌 Scan request received for ID: ${req.params.id}`);
-
-//         const { id } = req.params;
-        
-//         // Debugging: Check if ID is actually a number
-//         if (isNaN(id)) {
-//             console.log("❌ Invalid ID format.");
-//             return res.status(400).send("Invalid QR Code ID.");
-//         }
-
-//         const result = await pool.query("SELECT * FROM qr_codes WHERE id = $1", [id]);
-
-//         if (result.rows.length === 0) {
-//             console.log("❌ QR Code not found in database.");
-//             return res.status(404).send("QR Code not found.");
-//         }
-
-//         const qrCode = result.rows[0];
-
-//         // Update scan count
-//         await pool.query("UPDATE qr_codes SET scan_count = scan_count + 1 WHERE id = $1", [id]);
-//         console.log(`✅ Scan count updated for ID: ${id}`);
-
-//         res.redirect(qrCode.link);
-//     } catch (error) {
-//         console.error("❌ Error processing scan:", error);
-//         res.status(500).send("Server error.");
-//     }
-// });
-
-
-
-
 app.get("/scan/:id", async (req, res) => {
     try {
+        console.log(`📌 Scan request received for ID: ${req.params.id}`);
+
         const { id } = req.params;
+        
+        // Debugging: Check if ID is actually a number
+        if (isNaN(id)) {
+            console.log("❌ Invalid ID format.");
+            return res.status(400).send("Invalid QR Code ID.");
+        }
+
         const result = await pool.query("SELECT * FROM qr_codes WHERE id = $1", [id]);
 
         if (result.rows.length === 0) {
+            console.log("❌ QR Code not found in database.");
             return res.status(404).send("QR Code not found.");
         }
 
@@ -131,42 +106,67 @@ app.get("/scan/:id", async (req, res) => {
 
         // Update scan count
         await pool.query("UPDATE qr_codes SET scan_count = scan_count + 1 WHERE id = $1", [id]);
+        console.log(`✅ Scan count updated for ID: ${id}`);
 
-        res.send(`
-            <html>
-            <head>
-                <script>
-                    function openInChrome() {
-                        var url = "${qrCode.link}";
-        
-                        // Check if Chrome is available (iOS scheme)
-                        var chromeURL = url.replace(/^https?:\/\//, "googlechrome://");
-        
-                        // Open in Chrome
-                        window.location.href = chromeURL;
-        
-                        // Fallback: If Chrome is not installed, open in the default browser after 1 second
-                        setTimeout(() => {
-                            window.location.href = url;
-                        }, 1000);
-                    }
-        
-                    // Auto-execute on page load
-                    openInChrome();
-                </script>
-            </head>
-            <body>
-                <p>Redirecting to Chrome... If nothing happens, <a href="googlechrome://${qrCode.link.replace(/^https?:\/\//, '')}">click here</a>.</p>
-            </body>
-            </html>
-        `);
-        
-
+        res.redirect(qrCode.link);
     } catch (error) {
         console.error("❌ Error processing scan:", error);
         res.status(500).send("Server error.");
     }
 });
+
+
+
+
+// app.get("/scan/:id", async (req, res) => {
+//     try {
+//         const { id } = req.params;
+//         const result = await pool.query("SELECT * FROM qr_codes WHERE id = $1", [id]);
+
+//         if (result.rows.length === 0) {
+//             return res.status(404).send("QR Code not found.");
+//         }
+
+//         const qrCode = result.rows[0];
+
+//         // Update scan count
+//         await pool.query("UPDATE qr_codes SET scan_count = scan_count + 1 WHERE id = $1", [id]);
+
+//         res.send(`
+//             <html>
+//             <head>
+//                 <script>
+//                     function openInChrome() {
+//                         var url = "${qrCode.link}";
+        
+//                         // Check if Chrome is available (iOS scheme)
+//                         var chromeURL = url.replace(/^https?:\/\//, "googlechrome://");
+        
+//                         // Open in Chrome
+//                         window.location.href = chromeURL;
+        
+//                         // Fallback: If Chrome is not installed, open in the default browser after 1 second
+//                         setTimeout(() => {
+//                             window.location.href = url;
+//                         }, 1000);
+//                     }
+        
+//                     // Auto-execute on page load
+//                     openInChrome();
+//                 </script>
+//             </head>
+//             <body>
+//                 <p>Redirecting to Chrome... If nothing happens, <a href="googlechrome://${qrCode.link.replace(/^https?:\/\//, '')}">click here</a>.</p>
+//             </body>
+//             </html>
+//         `);
+        
+
+//     } catch (error) {
+//         console.error("❌ Error processing scan:", error);
+//         res.status(500).send("Server error.");
+//     }
+// });
 
 
 
