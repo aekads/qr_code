@@ -53,7 +53,7 @@ app.post("/generate-qr", async (req, res) => {
         const qrId = result.rows[0].id;
 
         // Generate QR Code with /scan/:id link
-        const qrScanUrl = `http://https://qr.aekads.com/scan/${qrId}`;
+        const qrScanUrl = `https://qr.aekads.com/scan/${qrId}`;
         console.log(`✅ QR Code will point to: ${qrScanUrl}`);
 
         const qrCodeImage = qr.imageSync(qrScanUrl, { type: "png" });
